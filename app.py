@@ -5,7 +5,7 @@ import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="Dashboard Cultivos",
+    page_title="Declaraciones de Cultivos", # Cambiado nombre pestaña
     page_icon="🚜",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -23,7 +23,6 @@ st.markdown("""
         h1 { font-size: 1.5rem !important; }
         h3 { font-size: 1.1rem !important; }
         .stExpander { border: 1px solid #ddd; border-radius: 5px; }
-        /* Ajuste para que el botón se vea bien */
         div.stButton > button {
             width: 100%;
             border: 1px solid #ccc;
@@ -31,7 +30,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🚜 Gestión de Cultivos")
+# --- TÍTULO PRINCIPAL ---
+st.title("🚜 Declaraciones de Cultivos") # Cambiado título principal
 
 # --- 1. CARGA DE DATOS ---
 @st.cache_data
@@ -76,21 +76,17 @@ if df is None:
 with st.expander("🔍 PULSA AQUÍ PARA FILTRAR DATOS", expanded=False):
     st.markdown("Selecciona las opciones para filtrar los gráficos:")
     
-    # Preparamos las opciones
     opciones_ano = sorted(df['AÑO'].unique())
     default_ano = ['2026'] if '2026' in opciones_ano else opciones_ano
     opciones_cultivo = sorted(df['CULTIVO'].unique())
     
     # --- GESTIÓN DEL BOTÓN "SELECCIONAR TODOS" ---
-    # Inicializamos el estado si no existe (por defecto todos seleccionados)
     if 'cultivos_seleccionados' not in st.session_state:
         st.session_state.cultivos_seleccionados = opciones_cultivo
         
-    # Función que se ejecuta al pulsar el botón
     def seleccionar_todos_cultivos():
         st.session_state.cultivos_seleccionados = opciones_cultivo
 
-    # --- DISEÑO DE LOS FILTROS ---
     c_f1, c_f2 = st.columns(2)
     
     with c_f1:
@@ -98,10 +94,8 @@ with st.expander("🔍 PULSA AQUÍ PARA FILTRAR DATOS", expanded=False):
         filtro_red = st.multiselect("💧 Red de Riego:", options=sorted(df['RED DE RIEGO'].unique()), default=sorted(df['RED DE RIEGO'].unique()))
         
     with c_f2:
-        # Botón para seleccionar todos (encima del selector de cultivos)
         st.button("✅ Seleccionar todos los cultivos", on_click=seleccionar_todos_cultivos)
         
-        # El multiselect está vinculado a la variable de session_state 'cultivos_seleccionados'
         filtro_cultivo = st.multiselect(
             "🌾 Cultivo:", 
             options=opciones_cultivo, 
@@ -111,7 +105,6 @@ with st.expander("🔍 PULSA AQUÍ PARA FILTRAR DATOS", expanded=False):
         filtro_doble = st.multiselect("🔄 Doble Cosecha:", options=sorted(df['DOBLE COSECHA'].unique()), default=sorted(df['DOBLE COSECHA'].unique()))
 
 # APLICAR FILTROS
-# Nota: usamos la variable filtro_cultivo que viene del widget (que a su vez lee del session_state)
 df_filtered = df.query("`AÑO` == @filtro_ano & `RED DE RIEGO` == @filtro_red & `CULTIVO` == @filtro_cultivo & `DOBLE COSECHA` == @filtro_doble")
 
 st.markdown("---")
@@ -145,7 +138,6 @@ if not df_filtered.empty:
         color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
     )
     
-    # Etiquetas grandes y negras
     fig_bar.update_traces(
         texttemplate='%{text:.1f}', 
         textposition='outside',
