@@ -23,6 +23,11 @@ st.markdown("""
         h1 { font-size: 1.5rem !important; }
         h3 { font-size: 1.1rem !important; }
         .stExpander { border: 1px solid #ddd; border-radius: 5px; }
+        /* Ajuste para que el botón se vea bien */
+        div.stButton > button {
+            width: 100%;
+            border: 1px solid #ccc;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -71,18 +76,42 @@ if df is None:
 with st.expander("🔍 PULSA AQUÍ PARA FILTRAR DATOS", expanded=False):
     st.markdown("Selecciona las opciones para filtrar los gráficos:")
     
+    # Preparamos las opciones
     opciones_ano = sorted(df['AÑO'].unique())
     default_ano = ['2026'] if '2026' in opciones_ano else opciones_ano
+    opciones_cultivo = sorted(df['CULTIVO'].unique())
     
+    # --- GESTIÓN DEL BOTÓN "SELECCIONAR TODOS" ---
+    # Inicializamos el estado si no existe (por defecto todos seleccionados)
+    if 'cultivos_seleccionados' not in st.session_state:
+        st.session_state.cultivos_seleccionados = opciones_cultivo
+        
+    # Función que se ejecuta al pulsar el botón
+    def seleccionar_todos_cultivos():
+        st.session_state.cultivos_seleccionados = opciones_cultivo
+
+    # --- DISEÑO DE LOS FILTROS ---
     c_f1, c_f2 = st.columns(2)
+    
     with c_f1:
         filtro_ano = st.multiselect("📅 Año:", options=opciones_ano, default=default_ano)
         filtro_red = st.multiselect("💧 Red de Riego:", options=sorted(df['RED DE RIEGO'].unique()), default=sorted(df['RED DE RIEGO'].unique()))
+        
     with c_f2:
-        filtro_cultivo = st.multiselect("🌾 Cultivo:", options=sorted(df['CULTIVO'].unique()), default=sorted(df['CULTIVO'].unique()))
+        # Botón para seleccionar todos (encima del selector de cultivos)
+        st.button("✅ Seleccionar todos los cultivos", on_click=seleccionar_todos_cultivos)
+        
+        # El multiselect está vinculado a la variable de session_state 'cultivos_seleccionados'
+        filtro_cultivo = st.multiselect(
+            "🌾 Cultivo:", 
+            options=opciones_cultivo, 
+            key="cultivos_seleccionados" 
+        )
+        
         filtro_doble = st.multiselect("🔄 Doble Cosecha:", options=sorted(df['DOBLE COSECHA'].unique()), default=sorted(df['DOBLE COSECHA'].unique()))
 
 # APLICAR FILTROS
+# Nota: usamos la variable filtro_cultivo que viene del widget (que a su vez lee del session_state)
 df_filtered = df.query("`AÑO` == @filtro_ano & `RED DE RIEGO` == @filtro_red & `CULTIVO` == @filtro_cultivo & `DOBLE COSECHA` == @filtro_doble")
 
 st.markdown("---")
@@ -150,22 +179,21 @@ if not df_filtered.empty:
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
     
-    # --- MEJORAS VISUALES CIRCULAR ---
     fig_pie.update_traces(
         textinfo='percent+label', 
         textposition='inside',
         textfont=dict(
             family="Arial", 
-            size=16,          # Letra más grande
-            color="black",    # Color negro para contraste
-            weight="bold"     # Negrita
+            size=16,
+            color="black",
+            weight="bold"
         )
     )
     
     fig_pie.update_layout(
         showlegend=False, 
         margin=dict(t=20, b=20, l=0, r=0),
-        height=350 # He aumentado la altura (antes 250) para que se vea más grande
+        height=350
     )
     st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
 
