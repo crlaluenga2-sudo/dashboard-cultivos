@@ -146,7 +146,7 @@ if not df_filtered.empty:
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
 
-# --- 6. TABLA DINÁMICA CON SUB-TOTALES ---
+# --- 6. TABLA DINÁMICA DE RESUMEN ---
 st.markdown("---")
 st.subheader("📊 Tabla Dinámica de Resumen")
 
@@ -161,37 +161,45 @@ if not df_filtered.empty:
         fill_value=0
     )
     
-    # 2. Calcular Totales por Fila (Suma de Años)
+    # 2. Total General por fila (suma de años)
     pivot['Total General'] = pivot.sum(axis=1)
     
-    # 3. Calcular Total por CULTIVO (Subtotal)
-    # Agrupamos por el índice de nivel 0 (CULTIVO) y sumamos 'Total General'
+    # 3. Calcular Total por CULTIVO
     total_por_cultivo = pivot.groupby(level=0)['Total General'].sum()
-    
-    # Asignamos este valor a una nueva columna 'Total Cultivo'
-    # Usamos map sobre el índice para poner el valor en todas las filas del cultivo
     pivot['Total Cultivo'] = pivot.index.get_level_values(0).map(total_por_cultivo)
     
-    # 4. LIMPIEZA VISUAL: Mostrar solo en la última fila del grupo
-    # Identificamos qué filas NO son la última de su grupo
+    # 4. Limpieza: Dejar solo el valor en la última fila del grupo
     is_not_last = pivot.index.get_level_values(0).duplicated(keep='last')
-    
-    # Ponemos NaN en esas filas para que no se muestre el número repetido
     pivot.loc[is_not_last, 'Total Cultivo'] = np.nan
     
-    # 5. Agregar Fila Final de TOTALES
+    # 5. Fila de TOTALES
     totals_row = pivot.sum(axis=0)
-    totals_row.name = ('TOTALES', '') # Nombre para el índice
+    totals_row.name = ('TOTALES', '') 
     
     # Unir
     pivot_final = pd.concat([pivot, totals_row.to_frame().T])
     
-    # 6. Mostrar con formato inteligente
-    # Usamos una función lambda para ocultar los NaN (mostrarlos como vacío "")
+    # --- FUNCIONES DE ESTILO ---
+    
+    # Estilo para la columna 'Total Cultivo': Amarillo, Negrita y Borde
+    def resaltar_total_cultivo(val):
+        if pd.notnull(val) and val != "":
+            return 'background-color: #FFF59D; color: black; font-weight: bold; border: 2px solid #FBC02D'
+        return ''
+
+    # Estilo para la fila 'TOTALES': Gris y Negrita
+    def resaltar_fila_totales(row):
+        if row.name == ('TOTALES', ''):
+            return ['background-color: #ECEFF1; font-weight: bold; border-top: 2px solid #546E7A'] * len(row)
+        return [''] * len(row)
+
+    # 6. Mostrar con formato
     st.dataframe(
         pivot_final.style
-        .format("{:,.2f}", na_rep="") # Aquí está el truco para que salga vacío
-        .background_gradient(cmap="Blues", subset=pd.IndexSlice[pivot_final.index[:-1], pivot_final.columns[:-1]]), # Color solo en datos centrales
+        .format("{:,.2f}", na_rep="")
+        .map(resaltar_total_cultivo, subset=['Total Cultivo']) # Aplica estilo a la columna clave
+        .apply(resaltar_fila_totales, axis=1) # Aplica estilo a la fila final
+        .background_gradient(cmap="Blues", subset=pd.IndexSlice[pivot_final.index[:-1], pivot_final.columns[:-2]]), # Degradado solo en los años
         use_container_width=True
     )
     
