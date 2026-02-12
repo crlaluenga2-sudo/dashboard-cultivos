@@ -122,4 +122,68 @@ with col1:
             df_agrupado, 
             x="CULTIVO", 
             y="HAS", 
-            color="AÑO",
+            color="AÑO", 
+            barmode="group",
+            text="HAS", # Ponemos el valor como texto
+            color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
+        )
+        
+        # Formato del texto (2 decimales) y posición
+        fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        
+        # Ajuste de márgenes para que el número no se corte arriba
+        fig_bar.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', margin=dict(t=50))
+        
+        st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
+    else:
+        st.warning("No hay datos visibles.")
+
+with col2:
+    st.subheader("💧 Distribución por Red de Riego")
+    if not df_filtered.empty:
+        fig_pie = px.pie(
+            df_filtered, 
+            values="HAS", 
+            names="RED DE RIEGO", 
+            hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        # En gráficos de tarta, staticPlot=True quita los tooltips
+        fig_pie.update_traces(textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
+
+col3, col4 = st.columns(2)
+
+with col3:
+    st.subheader("🔄 Impacto Doble Cosecha")
+    if not df_filtered.empty:
+        df_doble = df_filtered.groupby('DOBLE COSECHA')['HAS'].sum().reset_index()
+        fig_doble = px.bar(
+            df_doble,
+            x='DOBLE COSECHA',
+            y='HAS',
+            color='DOBLE COSECHA',
+            text='HAS'
+        )
+        fig_doble.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        fig_doble.update_layout(margin=dict(t=50), showlegend=False)
+        st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
+
+with col4:
+    st.subheader("📈 Evolución Total")
+    if not df_filtered.empty:
+        df_ano = df_filtered.groupby('AÑO')['HAS'].sum().reset_index()
+        fig_line = px.line(
+            df_ano,
+            x='AÑO',
+            y='HAS',
+            markers=True,
+            text='HAS' # Valor en los puntos
+        )
+        fig_line.update_traces(textposition="bottom right", texttemplate='%{text:.2f}')
+        st.plotly_chart(fig_line, use_container_width=True, config=config_estatica)
+
+# --- 5. TABLA ---
+st.subheader("📋 Datos Detallados")
+with st.expander("Ver tabla completa"):
+    st.dataframe(df_filtered.style.format({"HAS": "{:.2f}"}), use_container_width=True)
