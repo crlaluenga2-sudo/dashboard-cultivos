@@ -145,34 +145,36 @@ if not df_filtered.empty:
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
 
-# --- 6. TABLA DINÁMICA (NUEVO) ---
+# --- 6. TABLA DINÁMICA CON TOTALES ---
 st.markdown("---")
 st.subheader("📊 Tabla Dinámica de Resumen")
 
 if not df_filtered.empty:
-    # Creamos la tabla dinámica (pivot table)
-    # Filas: Cultivo
-    # Columnas: Año
-    # Valores: Suma de Hectáreas
-    pivot_table = pd.pivot_table(
+    # 1. Crear la tabla pivote (Suma de Has por Cultivo+Red y Año)
+    pivot = pd.pivot_table(
         df_filtered, 
         values='HAS', 
-        index=['CULTIVO', 'RED DE RIEGO'], # Agrupado por Cultivo y luego Red
-        columns=['AÑO'], 
+        index=['CULTIVO', 'RED DE RIEGO'], 
+        columns='AÑO', 
         aggfunc='sum', 
         fill_value=0
     )
     
-    # Añadimos totales por fila y columna
-    pivot_table['Total General'] = pivot_table.sum(axis=1)
+    # 2. Agregar Columna "Total General" (Suma horizontal: 2025 + 2026...)
+    pivot['Total General'] = pivot.sum(axis=1)
     
-    # Formateamos para que se vea bonito (2 decimales)
+    # 3. Agregar Fila "TOTALES" (Suma vertical de cada columna)
+    totals_row = pivot.sum(axis=0)
+    totals_row.name = ('TOTALES', '') # Nombre del índice para la fila final
+    
+    # Unimos la fila de totales al final del dataframe
+    pivot_final = pd.concat([pivot, totals_row.to_frame().T])
+    
+    # 4. Mostrar la tabla con formato
     st.dataframe(
-        pivot_table.style.format("{:.2f}").background_gradient(cmap="Blues", axis=None),
+        pivot_final.style.format("{:,.2f}").background_gradient(cmap="Blues"),
         use_container_width=True
     )
     
-    st.info("💡 Esta tabla muestra la suma de hectáreas desglosada por Cultivo y Red de Riego, comparando los años seleccionados.")
-
 else:
-    st.warning("No hay datos para generar la tabla dinámica.")
+    st.warning("No hay datos para generar la tabla.")
