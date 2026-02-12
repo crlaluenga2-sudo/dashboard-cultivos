@@ -97,7 +97,12 @@ c3.metric("Cultivos", df_filtered['CULTIVO'].nunique())
 
 st.markdown("---")
 
-config_estatica = {'staticPlot': True}
+# CONFIGURACIÓN PARA ZOOM (Habilitamos interactividad pero ocultamos tooltips molestos)
+config_zoom = {
+    'scrollZoom': True,       # Permite zoom con la rueda del ratón
+    'displayModeBar': True,   # Muestra la barra de herramientas (zoom, reset, etc.)
+    'displaylogo': False      # Oculta el logo de Plotly
+}
 
 # --- 4. GRÁFICOS ---
 
@@ -115,35 +120,26 @@ if not df_filtered.empty:
         color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
     )
     
-    # --- MEJORA VISUAL DE ETIQUETAS ---
+    # --- ESTILO VISUAL ---
     fig_bar.update_traces(
         texttemplate='%{text:.1f}', 
         textposition='outside',
-        textfont=dict(
-            family="Arial Black", # Fuente gruesa
-            size=14,              # Tamaño más grande
-            color="black"         # Color negro
-        ),
-        cliponaxis=False          # Evita que se corten los números arriba
+        textfont=dict(family="Arial Black", size=14, color="black"),
+        cliponaxis=False,
+        # hoverinfo='none' # Descomenta esto si quieres quitar TOTALMENTE los tooltips al pasar el ratón
     )
     
     fig_bar.update_layout(
         uniformtext_minsize=8, 
         uniformtext_mode='hide', 
-        # Aumentamos margen superior (t=40) para que quepan los números grandes
         margin=dict(t=40, l=0, r=0, b=0),
         xaxis_title=None,
         yaxis_title=None,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
-        height=350
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        height=350,
+        dragmode='zoom' # Activa el modo zoom por defecto
     )
-    st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
+    st.plotly_chart(fig_bar, use_container_width=True, config=config_zoom)
 else:
     st.info("Selecciona filtros para ver datos.")
 
@@ -165,7 +161,7 @@ if not df_filtered.empty:
         margin=dict(t=20, b=20, l=0, r=0),
         height=250
     )
-    st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
+    st.plotly_chart(fig_pie, use_container_width=True, config=config_zoom)
 
 st.markdown("---")
 
@@ -182,15 +178,10 @@ if not df_filtered.empty:
         color_discrete_sequence=['#e74c3c', '#2ecc71']
     )
     
-    # --- MEJORA VISUAL DE ETIQUETAS ---
     fig_doble.update_traces(
         texttemplate='%{text:.1f}', 
         textposition='outside',
-        textfont=dict(
-            family="Arial Black",
-            size=14,
-            color="black"
-        ),
+        textfont=dict(family="Arial Black", size=14, color="black"),
         cliponaxis=False
     )
 
@@ -199,9 +190,10 @@ if not df_filtered.empty:
         showlegend=False,
         xaxis_title=None,
         yaxis_title=None,
-        height=250
+        height=250,
+        dragmode='zoom'
     )
-    st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
+    st.plotly_chart(fig_doble, use_container_width=True, config=config_zoom)
 
 # --- 6. TABLA DINÁMICA ---
 st.markdown("---")
