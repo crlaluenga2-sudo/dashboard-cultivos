@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
@@ -145,12 +146,12 @@ if not df_filtered.empty:
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
 
-# --- 6. TABLA DINÁMICA CON TOTALES ---
+# --- 6. TABLA DINÁMICA CON SUB-TOTALES ---
 st.markdown("---")
 st.subheader("📊 Tabla Dinámica de Resumen")
 
 if not df_filtered.empty:
-    # 1. Crear la tabla pivote (Suma de Has por Cultivo+Red y Año)
+    # 1. Crear Pivot Table
     pivot = pd.pivot_table(
         df_filtered, 
         values='HAS', 
@@ -160,19 +161,37 @@ if not df_filtered.empty:
         fill_value=0
     )
     
-    # 2. Agregar Columna "Total General" (Suma horizontal: 2025 + 2026...)
+    # 2. Calcular Totales por Fila (Suma de Años)
     pivot['Total General'] = pivot.sum(axis=1)
     
-    # 3. Agregar Fila "TOTALES" (Suma vertical de cada columna)
-    totals_row = pivot.sum(axis=0)
-    totals_row.name = ('TOTALES', '') # Nombre del índice para la fila final
+    # 3. Calcular Total por CULTIVO (Subtotal)
+    # Agrupamos por el índice de nivel 0 (CULTIVO) y sumamos 'Total General'
+    total_por_cultivo = pivot.groupby(level=0)['Total General'].sum()
     
-    # Unimos la fila de totales al final del dataframe
+    # Asignamos este valor a una nueva columna 'Total Cultivo'
+    # Usamos map sobre el índice para poner el valor en todas las filas del cultivo
+    pivot['Total Cultivo'] = pivot.index.get_level_values(0).map(total_por_cultivo)
+    
+    # 4. LIMPIEZA VISUAL: Mostrar solo en la última fila del grupo
+    # Identificamos qué filas NO son la última de su grupo
+    is_not_last = pivot.index.get_level_values(0).duplicated(keep='last')
+    
+    # Ponemos NaN en esas filas para que no se muestre el número repetido
+    pivot.loc[is_not_last, 'Total Cultivo'] = np.nan
+    
+    # 5. Agregar Fila Final de TOTALES
+    totals_row = pivot.sum(axis=0)
+    totals_row.name = ('TOTALES', '') # Nombre para el índice
+    
+    # Unir
     pivot_final = pd.concat([pivot, totals_row.to_frame().T])
     
-    # 4. Mostrar la tabla con formato
+    # 6. Mostrar con formato inteligente
+    # Usamos una función lambda para ocultar los NaN (mostrarlos como vacío "")
     st.dataframe(
-        pivot_final.style.format("{:,.2f}").background_gradient(cmap="Blues"),
+        pivot_final.style
+        .format("{:,.2f}", na_rep="") # Aquí está el truco para que salga vacío
+        .background_gradient(cmap="Blues", subset=pd.IndexSlice[pivot_final.index[:-1], pivot_final.columns[:-1]]), # Color solo en datos centrales
         use_container_width=True
     )
     
