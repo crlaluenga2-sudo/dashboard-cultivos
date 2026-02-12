@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS PARA MÓVIL (QUITA MÁRGENES EXCESIVOS) ---
+# --- CSS PARA MÓVIL Y ESTILOS ---
 st.markdown("""
     <style>
         .block-container {
@@ -68,14 +68,12 @@ if df is None:
     st.stop()
 
 # --- 2. FILTROS (EN DESPLEGABLE PRINCIPAL) ---
-# Al estar en el cuerpo principal, se ven fáciles en el móvil
 with st.expander("🔍 PULSA AQUÍ PARA FILTRAR DATOS", expanded=False):
     st.markdown("Selecciona las opciones para filtrar los gráficos:")
     
     opciones_ano = sorted(df['AÑO'].unique())
     default_ano = ['2026'] if '2026' in opciones_ano else opciones_ano
     
-    # Usamos columnas para que en PC se vean en línea y en móvil uno debajo de otro
     c_f1, c_f2 = st.columns(2)
     with c_f1:
         filtro_ano = st.multiselect("📅 Año:", options=opciones_ano, default=default_ano)
@@ -92,9 +90,8 @@ st.markdown("---")
 # --- 3. KPIs ---
 total_has = df_filtered['HAS'].sum()
 
-# KPIs compactos para móvil
 c1, c2, c3 = st.columns(3)
-c1.metric("Has Totales", f"{total_has:,.0f}") # Sin decimales para ahorrar espacio visual
+c1.metric("Has Totales", f"{total_has:,.0f}")
 c2.metric("Parcelas", df_filtered.shape[0])
 c3.metric("Cultivos", df_filtered['CULTIVO'].nunique())
 
@@ -102,7 +99,7 @@ st.markdown("---")
 
 config_estatica = {'staticPlot': True}
 
-# --- 4. GRÁFICOS (Leyenda arriba para móvil) ---
+# --- 4. GRÁFICOS ---
 
 # GRÁFICO 1: CULTIVOS
 st.subheader("📊 Hectáreas por Cultivo")
@@ -117,13 +114,24 @@ if not df_filtered.empty:
         text="HAS",
         color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
     )
-    fig_bar.update_traces(texttemplate='%{text:.1f}', textposition='outside')
     
-    # Ajustes móviles: Leyenda horizontal arriba
+    # --- MEJORA VISUAL DE ETIQUETAS ---
+    fig_bar.update_traces(
+        texttemplate='%{text:.1f}', 
+        textposition='outside',
+        textfont=dict(
+            family="Arial Black", # Fuente gruesa
+            size=14,              # Tamaño más grande
+            color="black"         # Color negro
+        ),
+        cliponaxis=False          # Evita que se corten los números arriba
+    )
+    
     fig_bar.update_layout(
         uniformtext_minsize=8, 
         uniformtext_mode='hide', 
-        margin=dict(t=30, l=0, r=0, b=0),
+        # Aumentamos margen superior (t=40) para que quepan los números grandes
+        margin=dict(t=40, l=0, r=0, b=0),
         xaxis_title=None,
         yaxis_title=None,
         legend=dict(
@@ -133,7 +141,7 @@ if not df_filtered.empty:
             xanchor="right",
             x=1
         ),
-        height=300
+        height=350
     )
     st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
 else:
@@ -173,9 +181,21 @@ if not df_filtered.empty:
         text='HAS',
         color_discrete_sequence=['#e74c3c', '#2ecc71']
     )
-    fig_doble.update_traces(texttemplate='%{text:.1f}', textposition='outside')
+    
+    # --- MEJORA VISUAL DE ETIQUETAS ---
+    fig_doble.update_traces(
+        texttemplate='%{text:.1f}', 
+        textposition='outside',
+        textfont=dict(
+            family="Arial Black",
+            size=14,
+            color="black"
+        ),
+        cliponaxis=False
+    )
+
     fig_doble.update_layout(
-        margin=dict(t=30, l=0, r=0, b=0), 
+        margin=dict(t=40, l=0, r=0, b=0), 
         showlegend=False,
         xaxis_title=None,
         yaxis_title=None,
