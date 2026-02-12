@@ -63,6 +63,7 @@ filtro_red = st.sidebar.multiselect("Red de Riego:", options=sorted(df['RED DE R
 filtro_cultivo = st.sidebar.multiselect("Cultivo:", options=sorted(df['CULTIVO'].unique()), default=sorted(df['CULTIVO'].unique()))
 filtro_doble = st.sidebar.multiselect("Doble Cosecha:", options=sorted(df['DOBLE COSECHA'].unique()), default=sorted(df['DOBLE COSECHA'].unique()))
 
+# APLICAR FILTROS
 df_filtered = df.query("`AÑO` == @filtro_ano & `RED DE RIEGO` == @filtro_red & `CULTIVO` == @filtro_cultivo & `DOBLE COSECHA` == @filtro_doble")
 
 # --- 3. KPIs ---
@@ -85,7 +86,6 @@ with col1:
     st.subheader("📊 Hectáreas por Cultivo y Año")
     if not df_filtered.empty:
         df_agrupado = df_filtered.groupby(['CULTIVO', 'AÑO'])['HAS'].sum().reset_index()
-        
         fig_bar = px.bar(
             df_agrupado, 
             x="CULTIVO", 
@@ -118,7 +118,6 @@ with col2:
             hole=0.4,
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        # Mostramos porcentaje y etiqueta, sin tooltip
         fig_pie.update_traces(textinfo='percent+label', textposition='outside')
         fig_pie.update_layout(showlegend=False, margin=dict(t=50, b=50))
         st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
@@ -145,3 +144,35 @@ if not df_filtered.empty:
         yaxis_title="Hectáreas"
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
+
+# --- 6. TABLA DINÁMICA (NUEVO) ---
+st.markdown("---")
+st.subheader("📊 Tabla Dinámica de Resumen")
+
+if not df_filtered.empty:
+    # Creamos la tabla dinámica (pivot table)
+    # Filas: Cultivo
+    # Columnas: Año
+    # Valores: Suma de Hectáreas
+    pivot_table = pd.pivot_table(
+        df_filtered, 
+        values='HAS', 
+        index=['CULTIVO', 'RED DE RIEGO'], # Agrupado por Cultivo y luego Red
+        columns=['AÑO'], 
+        aggfunc='sum', 
+        fill_value=0
+    )
+    
+    # Añadimos totales por fila y columna
+    pivot_table['Total General'] = pivot_table.sum(axis=1)
+    
+    # Formateamos para que se vea bonito (2 decimales)
+    st.dataframe(
+        pivot_table.style.format("{:.2f}").background_gradient(cmap="Blues", axis=None),
+        use_container_width=True
+    )
+    
+    st.info("💡 Esta tabla muestra la suma de hectáreas desglosada por Cultivo y Red de Riego, comparando los años seleccionados.")
+
+else:
+    st.warning("No hay datos para generar la tabla dinámica.")
