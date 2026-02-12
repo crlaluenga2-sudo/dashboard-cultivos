@@ -97,12 +97,8 @@ c3.metric("Cultivos", df_filtered['CULTIVO'].nunique())
 
 st.markdown("---")
 
-# CONFIGURACIÓN PARA ZOOM (Habilitamos interactividad pero ocultamos tooltips molestos)
-config_zoom = {
-    'scrollZoom': True,       # Permite zoom con la rueda del ratón
-    'displayModeBar': True,   # Muestra la barra de herramientas (zoom, reset, etc.)
-    'displaylogo': False      # Oculta el logo de Plotly
-}
+# CONFIGURACIÓN ESTÁTICA (Sin Zoom)
+config_estatica = {'staticPlot': True}
 
 # --- 4. GRÁFICOS ---
 
@@ -120,13 +116,12 @@ if not df_filtered.empty:
         color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
     )
     
-    # --- ESTILO VISUAL ---
+    # Etiquetas grandes y negras
     fig_bar.update_traces(
         texttemplate='%{text:.1f}', 
         textposition='outside',
         textfont=dict(family="Arial Black", size=14, color="black"),
-        cliponaxis=False,
-        # hoverinfo='none' # Descomenta esto si quieres quitar TOTALMENTE los tooltips al pasar el ratón
+        cliponaxis=False
     )
     
     fig_bar.update_layout(
@@ -136,16 +131,15 @@ if not df_filtered.empty:
         xaxis_title=None,
         yaxis_title=None,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        height=350,
-        dragmode='zoom' # Activa el modo zoom por defecto
+        height=350
     )
-    st.plotly_chart(fig_bar, use_container_width=True, config=config_zoom)
+    st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
 else:
     st.info("Selecciona filtros para ver datos.")
 
 st.markdown("---")
 
-# GRÁFICO 2: RED DE RIEGO (TARTA)
+# GRÁFICO 2: RED DE RIEGO (TARTA MEJORADA)
 st.subheader("💧 Red de Riego")
 if not df_filtered.empty:
     fig_pie = px.pie(
@@ -155,13 +149,25 @@ if not df_filtered.empty:
         hole=0.4,
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
-    fig_pie.update_traces(textinfo='percent+label', textposition='inside')
+    
+    # --- MEJORAS VISUALES CIRCULAR ---
+    fig_pie.update_traces(
+        textinfo='percent+label', 
+        textposition='inside',
+        textfont=dict(
+            family="Arial", 
+            size=16,          # Letra más grande
+            color="black",    # Color negro para contraste
+            weight="bold"     # Negrita
+        )
+    )
+    
     fig_pie.update_layout(
         showlegend=False, 
         margin=dict(t=20, b=20, l=0, r=0),
-        height=250
+        height=350 # He aumentado la altura (antes 250) para que se vea más grande
     )
-    st.plotly_chart(fig_pie, use_container_width=True, config=config_zoom)
+    st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
 
 st.markdown("---")
 
@@ -190,10 +196,9 @@ if not df_filtered.empty:
         showlegend=False,
         xaxis_title=None,
         yaxis_title=None,
-        height=250,
-        dragmode='zoom'
+        height=250
     )
-    st.plotly_chart(fig_doble, use_container_width=True, config=config_zoom)
+    st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
 
 # --- 6. TABLA DINÁMICA ---
 st.markdown("---")
