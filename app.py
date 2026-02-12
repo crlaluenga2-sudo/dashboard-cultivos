@@ -145,8 +145,3 @@ if not df_filtered.empty:
         yaxis_title="Hectáreas"
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
-
-# --- 6. TABLA ---
-st.subheader("📋 Datos Detallados")
-with st.expander("Ver tabla completa"):
-    st.dataframe(df_filtered.style.format({"HAS": "{:.2f}"}), use_container_width=True)
