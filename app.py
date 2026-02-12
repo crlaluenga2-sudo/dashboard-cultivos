@@ -74,41 +74,59 @@ c3.metric("Cultivos", df_filtered['CULTIVO'].nunique())
 
 st.markdown("---")
 
-# CONFIGURACIÓN ESTÁTICA (Sin zoom ni tooltips)
+# CONFIGURACIÓN ESTÁTICA
 config_estatica = {'staticPlot': True}
 
-# --- 4. GRÁFICOS ---
+# --- 4. GRÁFICOS (FILA 1) ---
+col1, col2 = st.columns(2)
 
-# GRÁFICO 1: CULTIVOS (Ancho completo)
-st.subheader("📊 Hectáreas por Cultivo y Año")
-if not df_filtered.empty:
-    df_agrupado = df_filtered.groupby(['CULTIVO', 'AÑO'])['HAS'].sum().reset_index()
-    
-    fig_bar = px.bar(
-        df_agrupado, 
-        x="CULTIVO", 
-        y="HAS", 
-        color="AÑO", 
-        barmode="group",
-        text="HAS",
-        color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
-    )
-    fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_bar.update_layout(
-        uniformtext_minsize=8, 
-        uniformtext_mode='hide', 
-        margin=dict(t=50),
-        xaxis_title=None,
-        yaxis_title="Hectáreas"
-    )
-    # Se muestra en ancho completo
-    st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
-else:
-    st.warning("No hay datos visibles.")
+# GRÁFICO 1: CULTIVOS
+with col1:
+    st.subheader("📊 Hectáreas por Cultivo y Año")
+    if not df_filtered.empty:
+        df_agrupado = df_filtered.groupby(['CULTIVO', 'AÑO'])['HAS'].sum().reset_index()
+        
+        fig_bar = px.bar(
+            df_agrupado, 
+            x="CULTIVO", 
+            y="HAS", 
+            color="AÑO", 
+            barmode="group",
+            text="HAS",
+            color_discrete_map={'2025': '#95a5a6', '2026': '#3498db'}
+        )
+        fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        fig_bar.update_layout(
+            uniformtext_minsize=8, 
+            uniformtext_mode='hide', 
+            margin=dict(t=50),
+            xaxis_title=None,
+            yaxis_title="Hectáreas"
+        )
+        st.plotly_chart(fig_bar, use_container_width=True, config=config_estatica)
+    else:
+        st.warning("No hay datos visibles.")
 
-# GRÁFICO 2: DOBLE COSECHA (Ancho completo)
+# GRÁFICO 2: RED DE RIEGO (TARTA)
+with col2:
+    st.subheader("💧 Distribución por Red de Riego")
+    if not df_filtered.empty:
+        fig_pie = px.pie(
+            df_filtered, 
+            values="HAS", 
+            names="RED DE RIEGO", 
+            hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        # Mostramos porcentaje y etiqueta, sin tooltip
+        fig_pie.update_traces(textinfo='percent+label', textposition='outside')
+        fig_pie.update_layout(showlegend=False, margin=dict(t=50, b=50))
+        st.plotly_chart(fig_pie, use_container_width=True, config=config_estatica)
+
+# --- 5. GRÁFICOS (FILA 2) ---
 st.markdown("---")
 st.subheader("🔄 Hectáreas con Doble Cosecha")
+
 if not df_filtered.empty:
     df_doble = df_filtered.groupby('DOBLE COSECHA')['HAS'].sum().reset_index()
     fig_doble = px.bar(
@@ -117,7 +135,7 @@ if not df_filtered.empty:
         y='HAS',
         color='DOBLE COSECHA',
         text='HAS',
-        color_discrete_sequence=['#e74c3c', '#2ecc71'] # Colores distintivos
+        color_discrete_sequence=['#e74c3c', '#2ecc71']
     )
     fig_doble.update_traces(texttemplate='%{text:.2f}', textposition='outside')
     fig_doble.update_layout(
@@ -128,7 +146,7 @@ if not df_filtered.empty:
     )
     st.plotly_chart(fig_doble, use_container_width=True, config=config_estatica)
 
-# --- 5. TABLA ---
+# --- 6. TABLA ---
 st.subheader("📋 Datos Detallados")
 with st.expander("Ver tabla completa"):
     st.dataframe(df_filtered.style.format({"HAS": "{:.2f}"}), use_container_width=True)
